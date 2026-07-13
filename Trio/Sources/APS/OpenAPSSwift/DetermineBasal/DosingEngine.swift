@@ -806,7 +806,7 @@ enum DosingEngine {
 
         var smbInterval: Decimal = 3
         if !profile.smbInterval.isNaN {
-            smbInterval = min(10, max(1, profile.smbInterval))
+            smbInterval = min(30, max(1, profile.smbInterval))
         }
 
         // minutes since last bolus
