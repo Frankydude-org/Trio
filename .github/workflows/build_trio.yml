@@ -95,11 +95,13 @@ jobs:
           token: ${{ secrets.GH_PAT }}
 
       # This syncs any target branch to upstream branch of the same name
-      - name: Sync upstream changes
-        if: | # do not run the upstream sync action on the upstream repository
-          steps.workflow-permission.outputs.has_permission == 'true' &&
-          vars.SCHEDULED_SYNC != 'false' && github.repository_owner != 'nightscout'
-        id: sync
+        - name: Sync upstream changes
+            if: |
+                steps.workflow-permission.outputs.has_permission == 'true' &&
+                vars.SCHEDULED_SYNC != 'false' &&
+                github.repository_owner != 'nightscout' &&
+                github.ref_name == 'dev'
+            id: sync
         uses: aormsby/Fork-Sync-With-Upstream-action@v3.4.2
         with:
           target_sync_branch: ${{ env.TARGET_BRANCH }}
@@ -109,23 +111,30 @@ jobs:
           upstream_sync_repo: ${{ env.UPSTREAM_REPO }}
 
       # Display a sample message based on the sync output var 'has_new_commits'
-      - name: New commits found
+        - name: New commits found
         if: |
-          steps.workflow-permission.outputs.has_permission == 'true' &&
-          vars.SCHEDULED_SYNC != 'false' && steps.sync.outputs.has_new_commits == 'true'
+            steps.workflow-permission.outputs.has_permission == 'true' &&
+            vars.SCHEDULED_SYNC != 'false' &&
+            github.ref_name == 'dev' &&
+            steps.sync.outputs.has_new_commits == 'true'
         run: echo "New commits were found to sync."
 
-      - name: No new commits
+        - name: No new commits
         if: |
-          steps.workflow-permission.outputs.has_permission == 'true' &&
-          vars.SCHEDULED_SYNC != 'false' && steps.sync.outputs.has_new_commits == 'false'
+            steps.workflow-permission.outputs.has_permission == 'true' &&
+            vars.SCHEDULED_SYNC != 'false' &&
+            github.ref_name == 'dev' &&
+            steps.sync.outputs.has_new_commits == 'false'
         run: echo "There were no new commits."
 
-      - name: Show value of 'has_new_commits'
-        if: steps.workflow-permission.outputs.has_permission == 'true' && vars.SCHEDULED_SYNC != 'false'
+        - name: Show value of 'has_new_commits'
+        if: |
+            steps.workflow-permission.outputs.has_permission == 'true' &&
+            vars.SCHEDULED_SYNC != 'false' &&
+            github.ref_name == 'dev'
         run: |
-          echo ${{ steps.sync.outputs.has_new_commits }}
-          echo "NEW_COMMITS=${{ steps.sync.outputs.has_new_commits }}" >> $GITHUB_OUTPUT
+            echo ${{ steps.sync.outputs.has_new_commits }}
+            echo "NEW_COMMITS=${{ steps.sync.outputs.has_new_commits }}" >> $GITHUB_OUTPUT
 
       - name: Show scheduled build configuration message
         if: steps.workflow-permission.outputs.has_permission != 'true'
