@@ -138,22 +138,28 @@ platform :ios do
     )
   end
 
-  desc "Push to TestFlight"
-  lane :release do
-    api_key = app_store_connect_api_key(
-      key_id: "#{FASTLANE_KEY_ID}",
-      issuer_id: "#{FASTLANE_ISSUER_ID}",
-      key_content: "#{FASTLANE_KEY}"
-    )
-    
-    upload_to_testflight(
-      api_key: api_key,
-      skip_submission: false,
-      ipa: "Trio.ipa",
-      skip_waiting_for_build_processing: true,
-      changelog: git_branch+" "+last_git_commit[:abbreviated_commit_hash],
-    )
-  end
+desc "Push official Trio build to TestFlight"
+lane :release do
+  api_key = app_store_connect_api_key(
+    key_id: FASTLANE_KEY_ID,
+    issuer_id: FASTLANE_ISSUER_ID,
+    key_content: FASTLANE_KEY
+  )
+
+  UI.message("Distributing official Trio build to Trio Standard")
+
+  upload_to_testflight(
+    api_key: api_key,
+    ipa: "Trio.ipa",
+    app_identifier: ENV["BUNDLE_ID"],
+    skip_submission: false,
+    skip_waiting_for_build_processing: false,
+    distribute_external: false,
+    notify_external_testers: false,
+    groups: ["Trio Standard"],
+    changelog: "#{git_branch} #{last_git_commit[:abbreviated_commit_hash]}"
+  )
+end
 
   desc "Provision Identifiers and Certificates"
   lane :identifiers do
