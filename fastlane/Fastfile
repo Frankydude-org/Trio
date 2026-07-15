@@ -146,62 +146,17 @@ lane :release do
     key_content: "#{FASTLANE_KEY}"
   )
 
-  app_identifier = ENV["BUNDLE_ID"]
-
-  version_number = get_version_number(
-    xcodeproj: "#{GITHUB_WORKSPACE}/Trio.xcodeproj",
-    target: "Trio"
-  ).to_s
-
-  build_number = get_build_number(
-    xcodeproj: "#{GITHUB_WORKSPACE}/Trio.xcodeproj"
-  ).to_s
-
-  UI.message(
-    "Uploading Trio FD #{version_number} (#{build_number})"
-  )
-
   upload_to_testflight(
     api_key: api_key,
-    app_identifier: app_identifier,
+    app_identifier: ENV["BUNDLE_ID"],
     ipa: "Trio.ipa",
     skip_submission: true,
     skip_waiting_for_build_processing: false,
     changelog: "Trio FD #{last_git_commit[:abbreviated_commit_hash]}"
   )
 
-  app = Spaceship::ConnectAPI::App.find(app_identifier)
-
-  UI.user_error!(
-    "App Store Connect application not found for #{app_identifier}"
-  ) unless app
-
-  target_group = app.get_beta_groups.find do |group|
-    group.name == "Trio FD" && group.is_internal_group
-  end
-
-  UI.user_error!(
-    "Internal TestFlight group 'Trio FD' was not found"
-  ) unless target_group
-
-  build = Spaceship::ConnectAPI::Build.all(
-    app_id: app.id,
-    version: version_number,
-    build_number: build_number,
-    platform: "IOS",
-    processing_states: "VALID"
-  ).first
-
-  UI.user_error!(
-    "Processed build #{version_number} (#{build_number}) was not found"
-  ) unless build
-
-  build.add_beta_groups(
-    beta_groups: [target_group]
-  )
-
   UI.success(
-    "Trio FD #{version_number} (#{build_number}) assigned to the Trio FD group"
+    "Trio FD was uploaded and processed successfully by TestFlight"
   )
 end
 
