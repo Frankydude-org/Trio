@@ -165,11 +165,8 @@ lane :release do
     api_key: api_key,
     app_identifier: app_identifier,
     ipa: "Trio.ipa",
-    skip_submission: false,
+    skip_submission: true,
     skip_waiting_for_build_processing: false,
-    submit_beta_review: false,
-    distribute_external: false,
-    notify_external_testers: false,
     changelog: "Trio FD #{last_git_commit[:abbreviated_commit_hash]}"
   )
 
