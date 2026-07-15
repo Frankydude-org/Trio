@@ -134,14 +134,15 @@ jobs:
           github.ref_name == 'dev'
         run: |
           echo ${{ steps.sync.outputs.has_new_commits }}
-          echo "NEW_COMMITS=${{ steps.sync.outputs.has_new_commits }}" >> $GITHUB_OUTPUT      - name: Show scheduled build configuration message
+          echo "NEW_COMMITS=${{ steps.sync.outputs.has_new_commits }}" >> $GITHUB_OUTPUT
+
+      - name: Show scheduled build configuration message
         if: steps.workflow-permission.outputs.has_permission != 'true'
         run: |
           echo "### :calendar: Scheduled Sync and Build Disabled :mobile_phone_off:" >> $GITHUB_STEP_SUMMARY
           echo "You have not yet configured the scheduled sync and build for Trio's browser build." >> $GITHUB_STEP_SUMMARY
-          echo "Synchronizing your fork of <code>Trio</code> with the upstream repository <code>nightscout/Trio</code> will be skipped." >> $GITHUB_STEP_SUMMARY
-          echo "If you want to enable automatic builds and updates for your Trio, please follow the instructions \
-              under the following path <code>Trio/fastlane/testflight.md</code>." >> $GITHUB_STEP_SUMMARY
+          echo "Synchronizing your fork of \`Trio\` with the upstream repository \`nightscout/Trio\` will be skipped." >> $GITHUB_STEP_SUMMARY
+          echo "If you want to enable automatic builds and updates for your Trio, please follow the instructions under the following path \`Trio/fastlane/testflight.md\`." >> $GITHUB_STEP_SUMMARY
 
       # Set a logic flag if this is the second instance of this day-of-week in this month
       - name: Check if this is the second time this day-of-week happens this month
