@@ -138,7 +138,7 @@ platform :ios do
     )
   end
 
-desc "Push Trio FD to TestFlight"
+desc "Upload Trio and route it to the correct TestFlight group"
 lane :release do
   api_key = app_store_connect_api_key(
     key_id: "#{FASTLANE_KEY_ID}",
@@ -146,17 +146,75 @@ lane :release do
     key_content: "#{FASTLANE_KEY}"
   )
 
+  branch = ENV.fetch("BUILD_BRANCH", "").strip
+
+  target_group_name =
+    case branch
+    when "dev"
+      "Trio Standard"
+    when "fd-custom"
+      "Trio FD"
+    else
+      UI.user_error!("Unsupported BUILD_BRANCH '#{branch}'")
+    end
+
+  app_identifier = ENV.fetch("BUNDLE_ID")
+
+  version_number = get_version_number(
+    xcodeproj: "#{GITHUB_WORKSPACE}/Trio.xcodeproj",
+    target: "Trio"
+  ).to_s
+
+  build_number = get_build_number(
+    xcodeproj: "#{GITHUB_WORKSPACE}/Trio.xcodeproj"
+  ).to_s
+
   upload_to_testflight(
     api_key: api_key,
-    app_identifier: ENV["BUNDLE_ID"],
+    app_identifier: app_identifier,
     ipa: "Trio.ipa",
     skip_submission: true,
     skip_waiting_for_build_processing: false,
-    changelog: "Trio FD #{last_git_commit[:abbreviated_commit_hash]}"
+    changelog: "#{branch} #{last_git_commit[:abbreviated_commit_hash]}"
+  )
+
+  app = Spaceship::ConnectAPI::App.find(app_identifier)
+
+  groups = app.get_beta_groups
+
+  standard_group = groups.find do |group|
+    group.name == "Trio Standard" && group.is_internal_group
+  end
+
+  fd_group = groups.find do |group|
+    group.name == "Trio FD" && group.is_internal_group
+  end
+
+  build = Spaceship::ConnectAPI::Build.all(
+    app_id: app.id,
+    version: version_number,
+    build_number: build_number,
+    platform: "IOS",
+    processing_states: "VALID"
+  ).first
+
+  Spaceship::ConnectAPI.delete_beta_groups_from_build(
+    build_id: build.id,
+    beta_group_ids: [
+      standard_group.id,
+      fd_group.id
+    ]
+  )
+
+  target_group = branch == "dev" ? standard_group : fd_group
+
+  Spaceship::ConnectAPI.add_beta_groups_to_build(
+    build_id: build.id,
+    beta_group_ids: [target_group.id]
   )
 
   UI.success(
-    "Trio FD was uploaded and processed successfully by TestFlight"
+    "#{branch} #{version_number} (#{build_number}) assigned to #{target_group_name}"
   )
 end
 
