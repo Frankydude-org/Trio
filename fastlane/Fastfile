@@ -141,23 +141,67 @@ platform :ios do
 desc "Push official Trio build to TestFlight"
 lane :release do
   api_key = app_store_connect_api_key(
-    key_id: FASTLANE_KEY_ID,
-    issuer_id: FASTLANE_ISSUER_ID,
-    key_content: FASTLANE_KEY
+    key_id: "#{FASTLANE_KEY_ID}",
+    issuer_id: "#{FASTLANE_ISSUER_ID}",
+    key_content: "#{FASTLANE_KEY}"
   )
 
-  UI.message("Distributing official Trio build to Trio Standard")
+  app_identifier = ENV["BUNDLE_ID"]
+
+  version_number = get_version_number(
+    xcodeproj: "#{GITHUB_WORKSPACE}/Trio.xcodeproj",
+    target: "Trio"
+  ).to_s
+
+  build_number = get_build_number(
+    xcodeproj: "#{GITHUB_WORKSPACE}/Trio.xcodeproj"
+  ).to_s
+
+  UI.message(
+    "Uploading official Trio #{version_number} (#{build_number})"
+  )
 
   upload_to_testflight(
     api_key: api_key,
+    app_identifier: app_identifier,
     ipa: "Trio.ipa",
-    app_identifier: ENV["BUNDLE_ID"],
-    skip_submission: false,
+    skip_submission: true,
     skip_waiting_for_build_processing: false,
-    distribute_external: false,
-    notify_external_testers: false,
-    groups: ["Trio Standard"],
-    changelog: "#{git_branch} #{last_git_commit[:abbreviated_commit_hash]}"
+    changelog: "Trio Standard #{last_git_commit[:abbreviated_commit_hash]}"
+  )
+
+  app = Spaceship::ConnectAPI::App.find(app_identifier)
+
+  UI.user_error!(
+    "App Store Connect application not found for #{app_identifier}"
+  ) unless app
+
+  target_group = app.get_beta_groups.find do |group|
+    group.name == "Trio Standard" && group.is_internal_group
+  end
+
+  UI.user_error!(
+    "Internal TestFlight group 'Trio Standard' was not found"
+  ) unless target_group
+
+  build = Spaceship::ConnectAPI::Build.all(
+    app_id: app.id,
+    version: version_number,
+    build_number: build_number,
+    platform: "IOS",
+    processing_states: "VALID"
+  ).first
+
+  UI.user_error!(
+    "Processed build #{version_number} (#{build_number}) was not found"
+  ) unless build
+
+  build.add_beta_groups(
+    beta_groups: [target_group]
+  )
+
+  UI.success(
+    "Official Trio #{version_number} (#{build_number}) assigned to the Trio Standard group"
   )
 end
 
