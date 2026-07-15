@@ -254,6 +254,7 @@ jobs:
           FASTLANE_ISSUER_ID: ${{ secrets.FASTLANE_ISSUER_ID }}
           FASTLANE_KEY: ${{ secrets.FASTLANE_KEY }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          BUILD_BRANCH: ${{ github.ref_name }}
 
       # Upload Build artifacts
       - name: Upload build log, IPA and Symbol artifacts
