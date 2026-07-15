@@ -95,13 +95,13 @@ jobs:
           token: ${{ secrets.GH_PAT }}
 
       # This syncs any target branch to upstream branch of the same name
-        - name: Sync upstream changes
-            if: |
-                steps.workflow-permission.outputs.has_permission == 'true' &&
-                vars.SCHEDULED_SYNC != 'false' &&
-                github.repository_owner != 'nightscout' &&
-                github.ref_name == 'dev'
-            id: sync
+      - name: Sync upstream changes
+        if: |
+          steps.workflow-permission.outputs.has_permission == 'true' &&
+          vars.SCHEDULED_SYNC != 'false' &&
+          github.repository_owner != 'nightscout' &&
+          github.ref_name == 'dev'
+        id: sync
         uses: aormsby/Fork-Sync-With-Upstream-action@v3.4.2
         with:
           target_sync_branch: ${{ env.TARGET_BRANCH }}
