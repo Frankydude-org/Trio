@@ -82,7 +82,7 @@ jobs:
           fi
 
           # Check if vars.FORCE_NUKE_CERTS is not set to true
-          if [ vars.FORCE_NUKE_CERTS = "true" ]; then
+          if [ "${{ vars.FORCE_NUKE_CERTS }}" = "true" ]; then
             echo "::warning::‼️ Nuking of certificates was forced because the repository variable FORCE_NUKE_CERTS is set to 'true'."
           fi
 
