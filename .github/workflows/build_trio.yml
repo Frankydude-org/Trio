@@ -96,9 +96,11 @@ jobs:
 
       # This syncs any target branch to upstream branch of the same name
       - name: Sync upstream changes
-        if: | # do not run the upstream sync action on the upstream repository
+        if: |
           steps.workflow-permission.outputs.has_permission == 'true' &&
-          vars.SCHEDULED_SYNC != 'false' && github.repository_owner != 'nightscout'
+          vars.SCHEDULED_SYNC != 'false' &&
+          github.repository_owner != 'nightscout' &&
+          github.ref_name == 'dev'
         id: sync
         uses: aormsby/Fork-Sync-With-Upstream-action@v3.4.2
         with:
@@ -112,17 +114,24 @@ jobs:
       - name: New commits found
         if: |
           steps.workflow-permission.outputs.has_permission == 'true' &&
-          vars.SCHEDULED_SYNC != 'false' && steps.sync.outputs.has_new_commits == 'true'
+          vars.SCHEDULED_SYNC != 'false' &&
+          github.ref_name == 'dev' &&
+          steps.sync.outputs.has_new_commits == 'true'
         run: echo "New commits were found to sync."
 
       - name: No new commits
         if: |
           steps.workflow-permission.outputs.has_permission == 'true' &&
-          vars.SCHEDULED_SYNC != 'false' && steps.sync.outputs.has_new_commits == 'false'
+          vars.SCHEDULED_SYNC != 'false' &&
+          github.ref_name == 'dev' &&
+          steps.sync.outputs.has_new_commits == 'false'
         run: echo "There were no new commits."
 
       - name: Show value of 'has_new_commits'
-        if: steps.workflow-permission.outputs.has_permission == 'true' && vars.SCHEDULED_SYNC != 'false'
+        if: |
+          steps.workflow-permission.outputs.has_permission == 'true' &&
+          vars.SCHEDULED_SYNC != 'false' &&
+          github.ref_name == 'dev'
         run: |
           echo ${{ steps.sync.outputs.has_new_commits }}
           echo "NEW_COMMITS=${{ steps.sync.outputs.has_new_commits }}" >> $GITHUB_OUTPUT
@@ -132,9 +141,8 @@ jobs:
         run: |
           echo "### :calendar: Scheduled Sync and Build Disabled :mobile_phone_off:" >> $GITHUB_STEP_SUMMARY
           echo "You have not yet configured the scheduled sync and build for Trio's browser build." >> $GITHUB_STEP_SUMMARY
-          echo "Synchronizing your fork of <code>Trio</code> with the upstream repository <code>nightscout/Trio</code> will be skipped." >> $GITHUB_STEP_SUMMARY
-          echo "If you want to enable automatic builds and updates for your Trio, please follow the instructions \
-              under the following path <code>Trio/fastlane/testflight.md</code>." >> $GITHUB_STEP_SUMMARY
+          echo "Synchronizing your fork of \`Trio\` with the upstream repository \`nightscout/Trio\` will be skipped." >> $GITHUB_STEP_SUMMARY
+          echo "If you want to enable automatic builds and updates for your Trio, please follow the instructions under the following path \`Trio/fastlane/testflight.md\`." >> $GITHUB_STEP_SUMMARY
 
       # Set a logic flag if this is the second instance of this day-of-week in this month
       - name: Check if this is the second time this day-of-week happens this month
@@ -158,8 +166,13 @@ jobs:
       secrets: inherit
       if: |
         github.event_name == 'workflow_dispatch' ||
-          (vars.SCHEDULED_BUILD != 'false' && needs.check_status.outputs.IS_SECOND_IN_MONTH == 'true') ||
-          (vars.SCHEDULED_SYNC != 'false' && needs.check_status.outputs.NEW_COMMITS == 'true' )
+        (
+          github.ref_name == 'dev' &&
+          (
+            (vars.SCHEDULED_BUILD != 'false' && needs.check_status.outputs.IS_SECOND_IN_MONTH == 'true') ||
+            (vars.SCHEDULED_SYNC != 'false' && needs.check_status.outputs.NEW_COMMITS == 'true')
+          )
+        )
 
   # Builds Trio
   build:
@@ -168,11 +181,15 @@ jobs:
     runs-on: macos-26
     permissions:
       contents: write
-    if:
-      | # builds with manual start; if scheduled: once a month or when new commits are found
+    if: |
       github.event_name == 'workflow_dispatch' ||
-        (vars.SCHEDULED_BUILD != 'false' && needs.check_status.outputs.IS_SECOND_IN_MONTH == 'true') ||
-        (vars.SCHEDULED_SYNC != 'false' && needs.check_status.outputs.NEW_COMMITS == 'true' )
+      (
+        github.ref_name == 'dev' &&
+        (
+          (vars.SCHEDULED_BUILD != 'false' && needs.check_status.outputs.IS_SECOND_IN_MONTH == 'true') ||
+          (vars.SCHEDULED_SYNC != 'false' && needs.check_status.outputs.NEW_COMMITS == 'true')
+        )
+      )
     steps:
       - name: Select Xcode version
         run: "sudo xcode-select --switch /Applications/Xcode_26.2.app/Contents/Developer"
