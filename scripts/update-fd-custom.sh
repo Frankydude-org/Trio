@@ -19,7 +19,7 @@ from pathlib import Path
 
 checks = [
     {
-        "label": "JavaScript source",
+        "label": "JavaScript Oref",
         "path": Path("trio-oref/lib/determine-basal/determine-basal.js"),
         "originals": [
             "// allow SMBIntervals between 1 and 10 minutes",
@@ -28,16 +28,6 @@ checks = [
         "customized": [
             "// allow SMBIntervals between 1 and 30 minutes",
             "SMBInterval = Math.min(30,Math.max(1,profile.SMBInterval));",
-        ],
-    },
-    {
-        "label": "JavaScript bundle",
-        "path": Path("Trio/Resources/javascript/bundle/determine-basal.js"),
-        "originals": [
-            "Math.min(10,Math.max(1,i.SMBInterval))",
-        ],
-        "customized": [
-            "Math.min(30,Math.max(1,i.SMBInterval))",
         ],
     },
     {
