@@ -287,3 +287,10 @@ jobs:
           path: |
             artifacts
             buildlog
+
+      # After a successful standard build, update and build FD Custom
+      - name: Trigger FD Custom update
+        if: ${{ success() && github.ref_name == 'dev' }}
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: gh workflow run update_fd_custom.yml --repo "${{ github.repository }}" --ref dev
