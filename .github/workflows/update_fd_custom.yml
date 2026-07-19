@@ -53,3 +53,8 @@ jobs:
 
       - name: Push fd-custom
         run: git push origin fd-custom
+
+      - name: Trigger FD Custom build
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: gh workflow run build_trio.yml --repo "${{ github.repository }}" --ref fd-custom
