@@ -231,6 +231,11 @@ jobs:
           # Several patches may be added per submodule.
           # Adding comments (#) is strongly recommended to easily tell the individual patches apart.
 
+      # Apply and validate FD Custom SMB settings only for fd-custom builds
+      - name: Apply FD Custom settings
+        if: ${{ github.ref_name == 'fd-custom' }}
+        run: ./scripts/update-fd-custom.sh
+
       # Patch Fastlane Match to not print tables
       - name: Patch Match Tables
         run: |
