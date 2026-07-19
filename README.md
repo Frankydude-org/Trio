@@ -103,3 +103,4 @@ Instructions in **greater detail**:
 - [Looped Facebook Group](https://m.facebook.com/groups/TheLoopedGroup/)
 
 For questions or contributions, please join our [Discord server](https://discord.triodocs.org).
+
