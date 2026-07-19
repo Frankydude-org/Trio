@@ -1583,8 +1583,8 @@ var maxDelta_bg_threshold;
             //allow SMBs every 3 minutes by default
             var SMBInterval = 3;
             if (profile.SMBInterval) {
-                // allow SMBIntervals between 1 and 10 minutes
-                SMBInterval = Math.min(10,Math.max(1,profile.SMBInterval));
+                // allow SMBIntervals between 1 and 30 minutes
+                SMBInterval = Math.min(30,Math.max(1,profile.SMBInterval));
             }
             var nextBolusMins = round(SMBInterval-lastBolusAge,0);
             var nextBolusSeconds = round((SMBInterval - lastBolusAge) * 60, 0) % 60;
