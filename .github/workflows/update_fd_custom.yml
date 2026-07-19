@@ -1,0 +1,55 @@
+name: Update FD Custom
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-fd-custom
+  cancel-in-progress: false
+
+jobs:
+  update:
+    name: Merge dev into fd-custom and reapply FD settings
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout fd-custom
+        uses: actions/checkout@v5
+        with:
+          ref: fd-custom
+          fetch-depth: 0
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch dev
+        run: git fetch origin dev:refs/remotes/origin/dev
+
+      - name: Merge dev into fd-custom
+        run: |
+          git checkout fd-custom
+          git merge --no-edit origin/dev
+
+      - name: Apply and validate FD custom settings
+        run: ./scripts/update-fd-custom.sh
+
+      - name: Commit FD changes if needed
+        run: |
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "No FD customization changes to commit."
+          else
+            git add \
+              trio-oref/lib/determine-basal/determine-basal.js \
+              Trio/Sources/APS/OpenAPSSwift/DetermineBasal/DosingEngine.swift \
+              Trio/Sources/Models/DecimalPickerSettings.swift
+            git commit -m "Reapply FD custom SMB settings after dev update"
+          fi
+
+      - name: Push fd-custom
+        run: git push origin fd-custom
