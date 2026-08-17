@@ -1,0 +1,35 @@
+name: ChatGPT Build Control
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  dispatch-build:
+    if: >-
+      github.event.issue.number == 0 &&
+      github.event.comment.user.login == 'Frankydude' &&
+      (github.event.comment.body == '/build dev' || github.event.comment.body == '/build main')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Select branch
+        id: branch
+        shell: bash
+        run: |
+          if [ "${{ github.event.comment.body }}" = "/build main" ]; then
+            echo "ref=main" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=dev" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Dispatch Trio build
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+          REPO: ${{ github.repository }}
+          REF: ${{ steps.branch.outputs.ref }}
+        run: |
+          gh workflow run build_trio.yml --repo "$REPO" --ref "$REF"
